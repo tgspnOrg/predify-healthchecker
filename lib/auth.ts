@@ -143,7 +143,7 @@ export const authOptions = {
       const extToken = token as ExtendedJWT
       if (session.user) {
         ; (session as ExtendedSession).user.role = extToken.role || "Viewer"
-        ; (session as ExtendedSession).accessToken = extToken.accessToken
+          ; (session as ExtendedSession).accessToken = extToken.accessToken
       }
       return session
     },
@@ -165,6 +165,11 @@ export const handlers = {
 
 // keep an `auth` export for compatibility if other code expects it
 export const auth = handler
+
+// ensure the App Router can import GET/POST directly or as default
+export const GET = handler
+export const POST = handler
+export default handler
 
 export function hasRole(user: ExtendedUser | null, requiredRole: UserRole): boolean {
   if (!user) return false
