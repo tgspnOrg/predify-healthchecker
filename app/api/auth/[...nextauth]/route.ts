@@ -4,9 +4,7 @@
 
 import { handlers } from "@/lib/auth"
 
-// ✅ Exporta explicitamente
-export const GET = handlers.GET
-export const POST = handlers.POST
-
-// (opcional, se necessário para evitar Edge)
+// (Opcional, mas ajuda com libs OIDC): 
 export const runtime = "nodejs"
+
+export const { GET, POST } = handlers
