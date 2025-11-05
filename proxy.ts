@@ -13,11 +13,11 @@ export default auth((req) => {
   }
 
   // Check if user is authenticated
-  // if (!req.auth) {
-  //   const signInUrl = new URL("/api/auth/signin", req.url)
-  //   signInUrl.searchParams.set("callbackUrl", pathname)
-  //   return NextResponse.redirect(signInUrl)
-  // }
+  if (!req.auth) {
+    const signInUrl = new URL("/api/auth/signin", req.url)
+    signInUrl.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(signInUrl)
+  }
 
   return NextResponse.next()
 })

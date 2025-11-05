@@ -94,7 +94,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     {
       id: "openiddict",
       name: "OpenIddict",
-      type: "oidc",
+      type: "oauth",
       issuer: oidcIssuer,
       wellKnown: process.env.OIDC_WELLKNOWN || `${oidcIssuer}/.well-known/openid-configuration`,
       authorization: {
