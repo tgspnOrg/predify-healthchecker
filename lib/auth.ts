@@ -157,10 +157,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   trustHost: true,
 })
-export const handlers1 = {
-  GET: handlers,
-  POST: handlers,
-}
+
 export function hasRole(user: ExtendedUser | null, requiredRole: UserRole): boolean {
   if (!user) return false
 
