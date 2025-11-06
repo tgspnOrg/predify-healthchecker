@@ -88,13 +88,13 @@ const oidcIssuer = process.env.OIDC_ISSUER || "https://example.com"
 const oidcClientId = process.env.OIDC_CLIENT_ID || "demo-client-id"
 const oidcClientSecret = process.env.OIDC_CLIENT_SECRET || "demo-client-secret"
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authOptions = {
   secret: authSecret,
   providers: [
     {
       id: "openiddict",
       name: "OpenIddict",
-      type: "oidc",
+      type: "oauth",
       issuer: oidcIssuer,
       wellKnown: process.env.OIDC_WELLKNOWN || `${oidcIssuer}/.well-known/openid-configuration`,
       authorization: {
@@ -141,22 +141,37 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       const extToken = token as ExtendedJWT
       if (session.user) {
-        ;(session as ExtendedSession).user.role = extToken.role || "Viewer"
-        ;(session as ExtendedSession).accessToken = extToken.accessToken
+        ; (session as ExtendedSession).user.role = extToken.role || "Viewer"
+          ; (session as ExtendedSession).accessToken = extToken.accessToken
       }
       return session
     },
   },
-  pages: {
-    signIn: "/api/auth/signin",
-    error: "/api/auth/error",
-  },
+  // pages: {
+  //   signIn: "/api/auth/signin",
+  //   error: "/api/auth/error",
+  // },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  trustHost: true,
-})
+}
+
+const handler = NextAuth(authOptions)
+
+// Export handlers with GET/POST for the App Router route file
+export const handlers = {
+  GET: handler,
+  POST: handler,
+}
+
+// keep an `auth` export for compatibility if other code expects it
+export const auth = handler
+
+// ensure the App Router can import GET/POST directly or as default
+export const GET = handler
+export const POST = handler
+export default handler
 
 export function hasRole(user: ExtendedUser | null, requiredRole: UserRole): boolean {
   if (!user) return false
