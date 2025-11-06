@@ -14,6 +14,7 @@ import { EndpointFormDialog } from "@/components/endpoints/endpoint-form-dialog"
 import { EndpointCard } from "@/components/dashboard/endpoint-card"
 import { EndpointListView } from "@/components/dashboard/endpoint-list-view"
 import { SettingsDialog } from "@/components/dashboard/settings-dialog"
+import { EndpointHistoryDialog } from "@/components/dashboard/endpoint-history-dialog"
 import type { HealthEndpoint } from "@/lib/types"
 
 export default function DashboardPage() {
@@ -22,7 +23,9 @@ export default function DashboardPage() {
   const { settings, updateSettings } = useSettings()
   const [showEndpointDialog, setShowEndpointDialog] = useState(false)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false)
   const [editingEndpoint, setEditingEndpoint] = useState<HealthEndpoint | undefined>()
+  const [historyEndpoint, setHistoryEndpoint] = useState<HealthEndpoint | null>(null)
   const [viewMode, setViewMode] = useState<"card" | "list">("card")
 
   const { checkAllEndpoints } = useHealthMonitoring(endpoints, updateEndpoint, true, settings.autoRefreshInterval)
@@ -62,6 +65,11 @@ export default function DashboardPage() {
     if (confirm("Are you sure you want to delete this endpoint?")) {
       deleteEndpoint(id)
     }
+  }
+
+  const handleViewHistory = (endpoint: HealthEndpoint) => {
+    setHistoryEndpoint(endpoint)
+    setShowHistoryDialog(true)
   }
 
   const sortedEndpoints = [...endpoints].sort((a, b) => {
@@ -196,11 +204,17 @@ export default function DashboardPage() {
                   endpoint={endpoint}
                   onEdit={handleEditEndpoint}
                   onDelete={handleDeleteEndpoint}
+                  onViewHistory={handleViewHistory}
                 />
               ))}
             </div>
           ) : (
-            <EndpointListView endpoints={sortedEndpoints} onEdit={handleEditEndpoint} onDelete={handleDeleteEndpoint} />
+            <EndpointListView
+              endpoints={sortedEndpoints}
+              onEdit={handleEditEndpoint}
+              onDelete={handleDeleteEndpoint}
+              onViewHistory={handleViewHistory}
+            />
           )}
         </>
       )}
@@ -221,6 +235,8 @@ export default function DashboardPage() {
         settings={settings}
         onUpdate={updateSettings}
       />
+
+      <EndpointHistoryDialog endpoint={historyEndpoint} open={showHistoryDialog} onOpenChange={setShowHistoryDialog} />
     </div>
   )
 }

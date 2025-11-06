@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MoreVertical, ExternalLink, Pencil, Trash2, Activity, AlertTriangle } from "lucide-react"
+import { MoreVertical, ExternalLink, Pencil, Trash2, Activity, AlertTriangle, History } from "lucide-react"
 import type { HealthEndpoint } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -12,9 +12,10 @@ interface EndpointListViewProps {
   endpoints: HealthEndpoint[]
   onEdit: (endpoint: HealthEndpoint) => void
   onDelete: (id: string) => void
+  onViewHistory: (endpoint: HealthEndpoint) => void
 }
 
-export function EndpointListView({ endpoints, onEdit, onDelete }: EndpointListViewProps) {
+export function EndpointListView({ endpoints, onEdit, onDelete, onViewHistory }: EndpointListViewProps) {
   const statusVariants = {
     Healthy: "default",
     Degraded: "secondary",
@@ -85,6 +86,10 @@ export function EndpointListView({ endpoints, onEdit, onDelete }: EndpointListVi
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onViewHistory(endpoint)}>
+                        <History className="h-4 w-4 mr-2" />
+                        View History
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => window.open(endpoint.url, "_blank")}>
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Open URL

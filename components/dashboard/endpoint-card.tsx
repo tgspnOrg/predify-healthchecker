@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MoreVertical, ExternalLink, Pencil, Trash2, Activity, AlertTriangle } from "lucide-react"
+import { MoreVertical, ExternalLink, Pencil, Trash2, Activity, AlertTriangle, History } from "lucide-react"
 import type { HealthEndpoint } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -12,9 +12,10 @@ interface EndpointCardProps {
   endpoint: HealthEndpoint
   onEdit: (endpoint: HealthEndpoint) => void
   onDelete: (id: string) => void
+  onViewHistory: (endpoint: HealthEndpoint) => void
 }
 
-export function EndpointCard({ endpoint, onEdit, onDelete }: EndpointCardProps) {
+export function EndpointCard({ endpoint, onEdit, onDelete, onViewHistory }: EndpointCardProps) {
   const status = endpoint.lastCheck?.status || "Unknown"
   const latency = endpoint.lastCheck?.latency
 
@@ -59,6 +60,10 @@ export function EndpointCard({ endpoint, onEdit, onDelete }: EndpointCardProps) 
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onViewHistory(endpoint)}>
+              <History className="h-4 w-4 mr-2" />
+              View History
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => window.open(endpoint.url, "_blank")}>
               <ExternalLink className="h-4 w-4 mr-2" />
               Open URL
