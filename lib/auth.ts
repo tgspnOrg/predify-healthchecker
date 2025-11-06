@@ -156,7 +156,22 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 }
+// create the NextAuth handler and export an object named `handlers` that the App Router expects
+const handler = NextAuth(authOptions)
 
+// Export handlers with GET/POST for the App Router route file
+export const handlers = {
+  GET: handler,
+  POST: handler,
+}
+
+// keep an `auth` export for compatibility if other code expects it
+export const auth = handler
+
+// ensure the App Router can import GET/POST directly or as default
+export const GET = handler
+export const POST = handler
+export default handler
 export function hasRole(user: ExtendedUser | null, requiredRole: UserRole): boolean {
   if (!user) return false
 
