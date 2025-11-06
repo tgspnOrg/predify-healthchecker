@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import type { HealthCheckFormat, HealthCheckResult, HealthStatus, HealthDependency } from "@/lib/types"
 
 export async function POST(request: NextRequest) {
-  const session = await auth()
+  const session = await getServerSession(authOptions)
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
