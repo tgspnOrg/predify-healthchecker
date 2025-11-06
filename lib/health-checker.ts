@@ -22,21 +22,37 @@ export async function performHealthCheck(
       }),
     })
 
-    clearTimeout(timeout)
     const latency = Date.now() - startTime
 
     if (!response.ok) {
-      const error = await response.json()
+      let errorMessage = `API error: ${response.status}`
+      try {
+        const error = await response.json()
+        errorMessage = error.error || errorMessage
+      } catch {
+        // If response is not JSON, use status text
+        errorMessage = `${errorMessage} - ${response.statusText}`
+      }
+
       return {
         status: "Unhealthy",
         latency,
         timestamp: Date.now(),
-        error: error.error || `API error: ${response.status}`,
+        error: errorMessage,
       }
     }
 
-    const result = await response.json()
-    return result
+    try {
+      const result = await response.json()
+      return result
+    } catch (parseError: any) {
+      return {
+        status: "Unhealthy",
+        latency,
+        timestamp: Date.now(),
+        error: `Failed to parse API response: ${parseError.message}`,
+      }
+    }
   } catch (error: any) {
     const latency = Date.now() - startTime
 

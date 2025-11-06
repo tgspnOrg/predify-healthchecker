@@ -45,6 +45,8 @@ async function performHealthCheckServerSide(
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
+    console.log("[v0] Health check request:", { url, format, timeout })
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -56,6 +58,13 @@ async function performHealthCheckServerSide(
 
     clearTimeout(timeoutId)
     const latency = Date.now() - startTime
+
+    console.log("[v0] Health check response:", {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      contentType: response.headers.get("content-type"),
+    })
 
     if (!response.ok) {
       return {
@@ -79,7 +88,33 @@ async function performHealthCheckServerSide(
     }
 
     // HealthJson format
-    const data = await response.json()
+    let data: any
+    try {
+      const text = await response.text()
+      console.log("[v0] Response text length:", text.length)
+
+      // Check if response is empty
+      if (!text || text.trim().length === 0) {
+        return {
+          status: "Unhealthy",
+          latency,
+          timestamp: Date.now(),
+          error: "Empty response body (expected JSON)",
+        }
+      }
+
+      // Try to parse JSON
+      data = JSON.parse(text)
+      console.log("[v0] Parsed JSON successfully:", data)
+    } catch (parseError: any) {
+      console.error("[v0] JSON parse error:", parseError.message)
+      return {
+        status: "Unhealthy",
+        latency,
+        timestamp: Date.now(),
+        error: `Invalid JSON response: ${parseError.message}`,
+      }
+    }
 
     // Parse status
     let status: HealthStatus = "Unknown"
@@ -117,6 +152,12 @@ async function performHealthCheckServerSide(
     }
   } catch (error: any) {
     const latency = Date.now() - startTime
+
+    console.error("[v0] Health check error:", {
+      url,
+      error: error.message,
+      name: error.name,
+    })
 
     if (error.name === "AbortError") {
       return {
