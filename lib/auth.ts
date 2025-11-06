@@ -88,16 +88,13 @@ const oidcIssuer = process.env.OIDC_ISSUER || "https://example.com"
 const oidcClientId = process.env.OIDC_CLIENT_ID || "demo-client-id"
 const oidcClientSecret = process.env.OIDC_CLIENT_SECRET || "demo-client-secret"
 
-// Replace the previous direct NextAuth(...) destructuring export with:
-// 1) exportable authOptions for tests or server usage
-// 2) a handler function and a handlers object with GET/POST for App Router
-export const authOptions = {
+export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: authSecret,
   providers: [
     {
       id: "openiddict",
       name: "OpenIddict",
-      type: "oauth",
+      type: "oidc",
       issuer: oidcIssuer,
       wellKnown: process.env.OIDC_WELLKNOWN || `${oidcIssuer}/.well-known/openid-configuration`,
       authorization: {
@@ -108,7 +105,7 @@ export const authOptions = {
       clientId: oidcClientId,
       clientSecret: oidcClientSecret,
       checks: ["pkce", "state"],
-      profile(profile: any) {
+      profile(profile) {
         return {
           id: profile.sub,
           name: profile.name,
@@ -119,7 +116,7 @@ export const authOptions = {
     },
   ],
   callbacks: {
-    async jwt({ token, account, profile }: any) {
+    async jwt({ token, account, profile }) {
       // Initial sign in
       if (account && profile) {
         const role = extractRolesFromClaims(profile)
@@ -132,44 +129,34 @@ export const authOptions = {
         } as ExtendedJWT
       }
 
+      // Return previous token if the access token has not expired yet
       const extToken = token as ExtendedJWT
       if (extToken.accessTokenExpires && Date.now() < extToken.accessTokenExpires) {
         return token
       }
 
+      // Access token has expired, try to refresh it
       return refreshAccessToken(token as ExtendedJWT)
     },
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       const extToken = token as ExtendedJWT
       if (session.user) {
-        ; (session as ExtendedSession).user.role = extToken.role || "Viewer"
-          ; (session as ExtendedSession).accessToken = extToken.accessToken
+        ;(session as ExtendedSession).user.role = extToken.role || "Viewer"
+        ;(session as ExtendedSession).accessToken = extToken.accessToken
       }
       return session
     },
   },
+  pages: {
+    signIn: "/api/auth/signin",
+    error: "/api/auth/error",
+  },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-}
-
-// create the NextAuth handler and export an object named `handlers` that the App Router expects
-const handler = NextAuth(authOptions)
-
-// Export handlers with GET/POST for the App Router route file
-export const handlers = {
-  GET: handler,
-  POST: handler,
-}
-
-// keep an `auth` export for compatibility if other code expects it
-export const auth = handler
-
-// ensure the App Router can import GET/POST directly or as default
-export const GET = handler
-export const POST = handler
-export default handler
+  trustHost: true,
+})
 
 export function hasRole(user: ExtendedUser | null, requiredRole: UserRole): boolean {
   if (!user) return false
