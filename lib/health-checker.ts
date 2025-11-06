@@ -1,4 +1,4 @@
-import type { HealthCheckFormat, HealthCheckResult, HealthStatus, HealthDependency } from "./types"
+import type { HealthCheckFormat, HealthCheckResult, HealthStatus } from "./types"
 
 export async function performHealthCheck(
   url: string,
@@ -9,70 +9,34 @@ export async function performHealthCheck(
   const startTime = Date.now()
 
   try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeout)
-
-    const response = await fetch(url, {
-      method: "GET",
+    const response = await fetch("/api/health/check", {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...headers,
       },
-      signal: controller.signal,
+      body: JSON.stringify({
+        url,
+        format,
+        timeout,
+        headers,
+      }),
     })
 
-    clearTimeout(timeoutId)
+    clearTimeout(timeout)
     const latency = Date.now() - startTime
 
     if (!response.ok) {
+      const error = await response.json()
       return {
         status: "Unhealthy",
         latency,
         timestamp: Date.now(),
-        error: `HTTP ${response.status}: ${response.statusText}`,
+        error: error.error || `API error: ${response.status}`,
       }
     }
 
-    if (format === "OkText") {
-      const text = await response.text()
-      const isHealthy = text.trim().toLowerCase() === "ok"
-
-      return {
-        status: isHealthy ? "Healthy" : "Unhealthy",
-        latency,
-        timestamp: Date.now(),
-        error: isHealthy ? undefined : `Expected "ok", got "${text}"`,
-      }
-    }
-
-    // HealthJson format
-    const data = await response.json()
-
-    // Parse status
-    let status: HealthStatus = "Unknown"
-    if (data.status) {
-      const statusStr = data.status.toLowerCase()
-      if (statusStr === "healthy") status = "Healthy"
-      else if (statusStr === "degraded") status = "Degraded"
-      else if (statusStr === "unhealthy") status = "Unhealthy"
-    }
-
-    // Parse dependencies
-    let dependencies: HealthDependency[] | undefined
-    if (data.dependencies && Array.isArray(data.dependencies)) {
-      dependencies = data.dependencies.map((dep: any) => ({
-        name: dep.name || "Unknown",
-        status: parseHealthStatus(dep.status),
-        description: dep.description,
-      }))
-    }
-
-    return {
-      status,
-      latency,
-      timestamp: Date.now(),
-      dependencies,
-    }
+    const result = await response.json()
+    return result
   } catch (error: any) {
     const latency = Date.now() - startTime
 
@@ -89,7 +53,7 @@ export async function performHealthCheck(
       status: "Unhealthy",
       latency,
       timestamp: Date.now(),
-      error: error.message || "Network error",
+      error: error.message || "Failed to check endpoint",
     }
   }
 }

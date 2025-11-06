@@ -1,7 +1,7 @@
-import { withAuth } from "next-auth/middleware"
+import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 
-export default withAuth((req) => {
+export default auth((req) => {
   const { pathname } = req.nextUrl
 
   // Allow public routes
@@ -12,8 +12,8 @@ export default withAuth((req) => {
     return NextResponse.next()
   }
 
-  // Check if user is authenticated (next-auth exposes token on req.nextauth?.token)
-  if (!req.nextauth?.token) {
+  // Check if user is authenticated
+  if (!req.auth) {
     const signInUrl = new URL("/api/auth/signin", req.url)
     signInUrl.searchParams.set("callbackUrl", pathname)
     return NextResponse.redirect(signInUrl)
