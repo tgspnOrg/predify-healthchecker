@@ -5,12 +5,14 @@ import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Activity, Plus, Settings, RefreshCw } from "lucide-react"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Activity, Plus, Settings, RefreshCw, LayoutGrid, List } from "lucide-react"
 import { useEndpoints } from "@/hooks/use-endpoints"
 import { useSettings } from "@/hooks/use-settings"
 import { useHealthMonitoring } from "@/hooks/use-health-monitoring"
 import { EndpointFormDialog } from "@/components/endpoints/endpoint-form-dialog"
 import { EndpointCard } from "@/components/dashboard/endpoint-card"
+import { EndpointListView } from "@/components/dashboard/endpoint-list-view"
 import { SettingsDialog } from "@/components/dashboard/settings-dialog"
 import type { HealthEndpoint } from "@/lib/types"
 
@@ -21,6 +23,7 @@ export default function DashboardPage() {
   const [showEndpointDialog, setShowEndpointDialog] = useState(false)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [editingEndpoint, setEditingEndpoint] = useState<HealthEndpoint | undefined>()
+  const [viewMode, setViewMode] = useState<"card" | "list">("card")
 
   const { checkAllEndpoints } = useHealthMonitoring(endpoints, updateEndpoint, true, settings.autoRefreshInterval)
 
@@ -60,6 +63,13 @@ export default function DashboardPage() {
       deleteEndpoint(id)
     }
   }
+
+  const sortedEndpoints = [...endpoints].sort((a, b) => {
+    const statusOrder = { Unhealthy: 0, Degraded: 1, Healthy: 2, Unknown: 3 }
+    const aStatus = a.lastCheck?.status || "Unknown"
+    const bStatus = b.lastCheck?.status || "Unknown"
+    return statusOrder[aStatus] - statusOrder[bStatus]
+  })
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -163,21 +173,44 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {endpoints.map((endpoint) => (
-            <EndpointCard
-              key={endpoint.id}
-              endpoint={endpoint}
-              onEdit={handleEditEndpoint}
-              onDelete={handleDeleteEndpoint}
-            />
-          ))}
-        </div>
+        <>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Endpoints</h2>
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as any)}>
+              <ToggleGroupItem value="card" aria-label="Card view">
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Cards
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <List className="h-4 w-4 mr-2" />
+                List
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
+          {viewMode === "card" ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {sortedEndpoints.map((endpoint) => (
+                <EndpointCard
+                  key={endpoint.id}
+                  endpoint={endpoint}
+                  onEdit={handleEditEndpoint}
+                  onDelete={handleDeleteEndpoint}
+                />
+              ))}
+            </div>
+          ) : (
+            <EndpointListView endpoints={sortedEndpoints} onEdit={handleEditEndpoint} onDelete={handleDeleteEndpoint} />
+          )}
+        </>
       )}
 
       <EndpointFormDialog
         open={showEndpointDialog}
-        onOpenChange={setShowEndpointDialog}
+        onOpenChange={(open) => {
+          setShowEndpointDialog(open)
+          if (!open) setEditingEndpoint(undefined)
+        }}
         onSave={handleSaveEndpoint}
         endpoint={editingEndpoint}
       />

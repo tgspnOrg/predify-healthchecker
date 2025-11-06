@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -26,21 +26,50 @@ interface EndpointFormDialogProps {
 }
 
 export function EndpointFormDialog({ open, onOpenChange, onSave, endpoint }: EndpointFormDialogProps) {
-  const [formData, setFormData] = useState<Partial<HealthEndpoint>>(
-    endpoint || {
-      name: "",
-      url: "",
-      format: "HealthJson",
-      environment: "Production",
-      checkInterval: 60,
-      timeout: 10000,
-      publicVisible: false,
-      headers: {},
-    },
-  )
+  const [formData, setFormData] = useState<Partial<HealthEndpoint>>({
+    name: "",
+    url: "",
+    format: "HealthJson",
+    environment: "Production",
+    checkInterval: 60,
+    timeout: 10000,
+    publicVisible: false,
+    headers: {},
+  })
 
   const [headerKey, setHeaderKey] = useState("")
   const [headerValue, setHeaderValue] = useState("")
+
+  useEffect(() => {
+    if (open) {
+      if (endpoint) {
+        setFormData({
+          name: endpoint.name,
+          url: endpoint.url,
+          format: endpoint.format,
+          environment: endpoint.environment,
+          group: endpoint.group,
+          description: endpoint.description,
+          checkInterval: endpoint.checkInterval,
+          timeout: endpoint.timeout,
+          headers: endpoint.headers || {},
+          publicVisible: endpoint.publicVisible,
+          webhookUrl: endpoint.webhookUrl,
+        })
+      } else {
+        setFormData({
+          name: "",
+          url: "",
+          format: "HealthJson",
+          environment: "Production",
+          checkInterval: 60,
+          timeout: 10000,
+          publicVisible: false,
+          headers: {},
+        })
+      }
+    }
+  }, [endpoint, open])
 
   const handleSave = () => {
     if (!formData.name || !formData.url) return
